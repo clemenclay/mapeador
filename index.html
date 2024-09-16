@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mapa con Varias Direcciones</title>
+  <style>
+    /* Define el tamaño del mapa */
+    #map {
+      height: 500px;
+      width: 100%;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+
+    textarea,
+    input {
+      width: 100%;
+      margin-bottom: 20px;
+      padding: 10px;
+    }
+
+    button {
+      display: inline-block;
+      padding: 10px 15px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      cursor: pointer;
+      margin-right: 10px;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+  </style>
+</head>
+
+<body>
+  <h2>Pegar Direcciones y Mapearlas</h2>
+
+  <!-- Campo de texto para pegar varias direcciones -->
+  <textarea id="addresses" placeholder="Pega las direcciones aquí (una por línea)..."></textarea>
+  <button onclick="processAddresses()">Mapear Direcciones</button>
+  <button onclick="clearMarkers()">Limpiar Direcciones Mapeadas</button>
+
+  <h2>Generar Círculo en el Mapa</h2>
+
+  <!-- Campo de texto para una dirección única -->
+  <input id="circleAddress" placeholder="Ingresa una dirección para el círculo..." />
+  <input id="circleRadius" type="number" placeholder="Ingresa el radio del círculo en metros (ej. 500)" />
+  <button onclick="generateCircle()">Generar Círculo</button>
+  <button onclick="clearCircle()">Limpiar Círculo</button>
+
+  <!-- Mapa donde se mostrarán las direcciones -->
+  <div id="map"></div>
+
+  <script>
+    var map;
+    var markers = []; // Array para almacenar los marcadores
+    var circle; // Variable para el círculo
+
+    function initMap() {
+      // Iniciar el mapa centrado en Buenos Aires
+      map = new google.maps.Map(document.getElementById("map"), {
+        zoom: 12,
+        center: { lat: -34.6037, lng: -58.3816 }, // Buenos Aires, Argentina
+      });
+    }
+
+    // Procesar direcciones pegadas en el formulario
+    function processAddresses() {
+      var addressInput = document.getElementById("addresses").value;
+      var addressArray = addressInput.split("\n"); // Dividir las direcciones por línea
+      var geocoder = new google.maps.Geocoder();
+
+      // Iterar sobre las direcciones y geocodificarlas
+      for (var i = 0; i < addressArray.length; i++) {
+        var address = addressArray[i].trim() + ", Ciudad de Buenos Aires"; // Añadir "Ciudad de Buenos Aires"
+        if (address) {
+          geocodeAddress(geocoder, map, address);
+        }
+      }
+    }
+
+    // Función para geocodificar y mostrar marcador en el mapa
+    function geocodeAddress(geocoder, map, address) {
+      geocoder.geocode({ address: address }, function (results, status) {
+        if (status === "OK") {
+          var marker = new google.maps.Marker({
+            map: map,
+            position: results[0].geometry.location,
+            title: address,
+          });
+
+          markers.push(marker); // Guardar el marcador en el array
+          map.setCenter(results[0].geometry.location); // Centrar el mapa en el primer marcador
+        } else {
+          console.error("Error al geocodificar: " + status);
+        }
+      });
+    }
+
+    // Función para generar un círculo en una ubicación específica
+    function generateCircle() {
+      var geocoder = new google.maps.Geocoder();
+      var address = document.getElementById("circleAddress").value.trim() + ", Ciudad de Buenos Aires"; // Añadir "Ciudad de Buenos Aires"
+      var radius = parseInt(document.getElementById("circleRadius").value, 10); // Radio en metros
+
+      geocoder.geocode({ address: address }, function (results, status) {
+        if (status === "OK") {
+          // Crear un marcador en la ubicación
+          var location = results[0].geometry.location;
+          var marker = new google.maps.Marker({
+            map: map,
+            position: location,
+            title: address,
+          });
+
+          markers.push(marker); // Guardar el marcador en el array
+
+          // Crear un círculo con el radio dado
+          circle = new google.maps.Circle({
+            map: map,
+            radius: radius, // Radio en metros
+            fillColor: "#FF0000",
+            fillOpacity: 0.35,
+            strokeColor: "#FF0000",
+            strokeOpacity: 0.8,
+            strokeWeight: 2,
+            center: location,
+          });
+
+          map.setCenter(location); // Centrar el mapa en la ubicación del círculo
+        } else {
+          console.error("Error al geocodificar para el círculo: " + status);
+        }
+      });
+    }
+
+    // Función para limpiar los marcadores de direcciones
+    function clearMarkers() {
+      for (var i = 0; i < markers.length; i++) {
+        markers[i].setMap(null); // Eliminar el marcador del mapa
+      }
+      markers = []; // Vaciar el array de marcadores
+    }
+
+    // Función para limpiar el círculo
+    function clearCircle() {
+      if (circle) {
+        circle.setMap(null); // Eliminar el círculo del mapa
+        circle = null;
+      }
+    }
+
+    // Función para limpiar el campo de texto y los marcadores
+    function clearForm() {
+      document.getElementById("addresses").value = ""; // Limpiar el textarea de direcciones
+      clearMarkers(); // Limpiar los marcadores
+    }
+  </script>
+
+  <!-- Cargar la API de Google Maps con tu clave de API -->
+  <script async defer
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB41DRUbKWJHPxaFjMAwdrzWzbVKartNGg&callback=initMap">
+    </script>
+</body>
+
+</html>
